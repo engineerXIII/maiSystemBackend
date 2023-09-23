@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -26,8 +27,8 @@ func NewAuthRepository(db *sqlx.DB) auth.Repository {
 
 // Create new user
 func (r *authRepo) Register(ctx context.Context, user *models.User) (*models.User, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Register")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Register")
+	defer span.Finish()
 
 	u := &models.User{}
 	if err := r.db.QueryRowxContext(ctx, createUserQuery, &user.FirstName, &user.LastName, &user.Email,
@@ -41,8 +42,8 @@ func (r *authRepo) Register(ctx context.Context, user *models.User) (*models.Use
 
 // Update existing user
 func (r *authRepo) Update(ctx context.Context, user *models.User) (*models.User, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Update")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Update")
+	defer span.Finish()
 
 	u := &models.User{}
 	if err := r.db.GetContext(ctx, u, updateUserQuery, &user.FirstName, &user.LastName, &user.Email,
@@ -56,8 +57,8 @@ func (r *authRepo) Update(ctx context.Context, user *models.User) (*models.User,
 
 // Delete existing user
 func (r *authRepo) Delete(ctx context.Context, userID uuid.UUID) error {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Delete")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.Delete")
+	defer span.Finish()
 
 	result, err := r.db.ExecContext(ctx, deleteUserQuery, userID)
 	if err != nil {
@@ -76,8 +77,8 @@ func (r *authRepo) Delete(ctx context.Context, userID uuid.UUID) error {
 
 // Get user by id
 func (r *authRepo) GetByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.GetByID")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.GetByID")
+	defer span.Finish()
 
 	user := &models.User{}
 	if err := r.db.QueryRowxContext(ctx, getUserQuery, userID).StructScan(user); err != nil {
@@ -88,8 +89,8 @@ func (r *authRepo) GetByID(ctx context.Context, userID uuid.UUID) (*models.User,
 
 // Find users by name
 func (r *authRepo) FindByName(ctx context.Context, name string, query *utils.PaginationQuery) (*models.UsersList, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.FindByName")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.FindByName")
+	defer span.Finish()
 
 	var totalCount int
 	if err := r.db.GetContext(ctx, &totalCount, getTotalCount, name); err != nil {
@@ -138,8 +139,8 @@ func (r *authRepo) FindByName(ctx context.Context, name string, query *utils.Pag
 
 // Get users with pagination
 func (r *authRepo) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*models.UsersList, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.GetUsers")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.GetUsers")
+	defer span.Finish()
 
 	var totalCount int
 	if err := r.db.GetContext(ctx, &totalCount, getTotal); err != nil {
@@ -181,8 +182,8 @@ func (r *authRepo) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*mo
 
 // Find user by email
 func (r *authRepo) FindByEmail(ctx context.Context, user *models.User) (*models.User, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.FindByEmail")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.FindByEmail")
+	defer span.Finish()
 
 	foundUser := &models.User{}
 	if err := r.db.QueryRowxContext(ctx, findUserByEmail, user.Email).StructScan(foundUser); err != nil {

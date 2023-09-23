@@ -18,7 +18,15 @@ type Config struct {
 	Cookie   Cookie
 	Session  Session
 	Metrics  Metrics
+	Jaeger   Jaeger
 	Logger   Logger
+}
+
+// Jaeger configuration
+type Jaeger struct {
+	Host        string
+	ServiceName string
+	LogSpans    bool
 }
 
 // Swagger configuration

@@ -60,7 +60,7 @@ func (mw *MiddlewareManager) AuthSessionMiddleware(next echo.HandlerFunc) echo.H
 		ctx := context.WithValue(c.Request().Context(), utils.UserCtxKey{}, user)
 		c.SetRequest(c.Request().WithContext(ctx))
 
-		mw.logger.Info(
+		mw.logger.Infof(
 			"SessionMiddleware, RequestID: %s,  IP: %s, UserID: %s, CookieSessionID: %s",
 			utils.GetRequestID(c),
 			utils.GetIPAddress(c),

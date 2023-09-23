@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	basePrefix = "api-session:"
+	basePrefix = "api-session"
 )
 
 // Session repository
@@ -28,7 +28,7 @@ type sessionRepo struct {
 
 // Session repository constructor
 func NewSessionRepository(redisClient *redis.Client, cfg *config.Config) session.SessRepository {
-	return &sessionRepo{redisClient: redisClient, basePrefix: basePrefix, cfg: cfg}
+	return &sessionRepo{redisClient: redisClient, basePrefix: cfg.Session.Prefix, cfg: cfg}
 }
 
 // Create session in redis

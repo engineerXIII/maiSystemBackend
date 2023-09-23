@@ -12,6 +12,11 @@ server:
   CSRF: true
   Debug: false
 
+jaeger:
+  Host: localhost:6831
+  ServiceName: REST_API
+  LogSpans: false
+
 docs:
   Enable: false
   Prefix: swagger

@@ -3,10 +3,10 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"net/http"
 
 	"github.com/google/uuid"
-	//"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
 	"github.com/engineerXIII/maiSystemBackend/config"
@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	basePrefix    = "api-auth:"
+	basePrefix    = "api-auth"
 	cacheDuration = 3600
 )
 
@@ -37,8 +37,8 @@ func NewAuthUseCase(cfg *config.Config, authRepo auth.Repository, redisRepo auth
 
 // Create new user
 func (u *authUC) Register(ctx context.Context, user *models.User) (*models.UserWithToken, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Register")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Register")
+	defer span.Finish()
 
 	existsUser, err := u.authRepo.FindByEmail(ctx, user)
 	if existsUser != nil || err == nil {
@@ -68,8 +68,8 @@ func (u *authUC) Register(ctx context.Context, user *models.User) (*models.UserW
 
 // Update existing user
 func (u *authUC) Update(ctx context.Context, user *models.User) (*models.User, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Update")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Update")
+	defer span.Finish()
 
 	if err := user.PrepareUpdate(); err != nil {
 		return nil, httpErrors.NewBadRequestError(errors.Wrap(err, "authUC.Register.PrepareUpdate"))
@@ -93,8 +93,8 @@ func (u *authUC) Update(ctx context.Context, user *models.User) (*models.User, e
 
 // Delete new user
 func (u *authUC) Delete(ctx context.Context, userID uuid.UUID) error {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Delete")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Delete")
+	defer span.Finish()
 
 	if err := u.authRepo.Delete(ctx, userID); err != nil {
 		return err
@@ -136,24 +136,24 @@ func (u *authUC) GetByID(ctx context.Context, userID uuid.UUID) (*models.User, e
 
 // Find users by name
 func (u *authUC) FindByName(ctx context.Context, name string, query *utils.PaginationQuery) (*models.UsersList, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.FindByName")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.FindByName")
+	defer span.Finish()
 
 	return u.authRepo.FindByName(ctx, name, query)
 }
 
 // Get users with pagination
 func (u *authUC) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*models.UsersList, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.GetUsers")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.GetUsers")
+	defer span.Finish()
 
 	return u.authRepo.GetUsers(ctx, pq)
 }
 
 // Login user, returns user model with jwt token
 func (u *authUC) Login(ctx context.Context, user *models.User) (*models.UserWithToken, error) {
-	//span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Login")
-	//defer span.Finish()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Login")
+	defer span.Finish()
 
 	foundUser, err := u.authRepo.FindByEmail(ctx, user)
 	if err != nil {
