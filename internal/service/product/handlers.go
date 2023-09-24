@@ -7,6 +7,7 @@ import (
 	authRepository "github.com/engineerXIII/maiSystemBackend/internal/auth/repository"
 	authUseCase "github.com/engineerXIII/maiSystemBackend/internal/auth/usecase"
 	apiMiddlewares "github.com/engineerXIII/maiSystemBackend/internal/middleware"
+	productHttp "github.com/engineerXIII/maiSystemBackend/internal/product/delivery/http"
 	productRepository "github.com/engineerXIII/maiSystemBackend/internal/product/repository"
 	productUseCase "github.com/engineerXIII/maiSystemBackend/internal/product/usecase"
 	sessionRepository "github.com/engineerXIII/maiSystemBackend/internal/session/repository"
@@ -51,6 +52,7 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 
 	// Init handlers
 	authHandlers := authHttp.NewAuthHandlers(s.cfg, authUC, sessUC, s.logger)
+	productHandlers := productHttp.NewProductHandlers(s.cfg, pUC, s.logger)
 	//newsHandlers := newsHttp.NewNewsHandlers(s.cfg, newsUC, s.logger)
 	//commHandlers := commentsHttp.NewCommentsHandlers(s.cfg, commUC, s.logger)
 
@@ -95,10 +97,12 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 
 	health := v1.Group("/health")
 	authGroup := v1.Group("/auth")
+	productGroup := v1.Group("/product")
 	//newsGroup := v1.Group("/news")
 	//commGroup := v1.Group("/comments")
 
 	authHttp.MapAuthRoutes(authGroup, authHandlers, mw)
+	productHttp.MapProductRoutes(productGroup, productHandlers, mw)
 	//newsHttp.MapNewsRoutes(newsGroup, newsHandlers, mw)
 	//commentsHttp.MapCommentsRoutes(commGroup, commHandlers, mw)
 

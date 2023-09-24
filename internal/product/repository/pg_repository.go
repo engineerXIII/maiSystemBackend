@@ -115,7 +115,7 @@ func (r *productRepo) GetProducts(ctx context.Context, pq *utils.PaginationQuery
 		}, nil
 	}
 
-	var productList = make([]*models.Product, pq.GetSize())
+	var productList = make([]*models.Product, 0)
 	rows, err := r.db.QueryxContext(ctx, getProducts, pq.GetOffset(), pq.GetLimit())
 	if err != nil {
 		return nil, errors.Wrap(err, "productRepo.GetProducts.QueryxContext")
@@ -164,7 +164,7 @@ func (r *productRepo) SearchByName(ctx context.Context, name string, pq *utils.P
 		}, nil
 	}
 
-	var productList = make([]*models.Product, pq.GetSize())
+	var productList = make([]*models.Product, 0)
 	rows, err := r.db.QueryxContext(ctx, findByName, name, pq.GetOffset(), pq.GetLimit())
 	if err != nil {
 		return nil, errors.Wrap(err, "productRepo.SearchByName.QueryxContext")

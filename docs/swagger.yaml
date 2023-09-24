@@ -6,6 +6,52 @@ definitions:
       status:
         type: integer
     type: object
+  models.Product:
+    properties:
+      color:
+        maxLength: 30
+        type: string
+      cost:
+        type: integer
+      created_at:
+        type: string
+      description:
+        maxLength: 126
+        type: string
+      factory:
+        maxLength: 30
+        type: string
+      product_id:
+        type: string
+      product_name:
+        maxLength: 30
+        type: string
+      updated_at:
+        type: string
+    required:
+    - color
+    - cost
+    - description
+    - factory
+    - product_name
+    type: object
+  models.ProductList:
+    properties:
+      has_more:
+        type: boolean
+      page:
+        type: integer
+      products:
+        items:
+          $ref: '#/definitions/models.Product'
+        type: array
+      size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   models.User:
     properties:
       created_at:
@@ -268,4 +314,142 @@ paths:
       summary: Get CSRF token
       tags:
       - Auth
+  /product:
+    get:
+      consumes:
+      - application/json
+      description: Get product list handler
+      parameters:
+      - description: page number
+        format: page
+        in: query
+        name: page
+        type: integer
+      - description: size of page
+        format: size
+        in: query
+        name: size
+        type: integer
+      - description: filter name
+        format: orderBy
+        in: query
+        name: orderBy
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProductList'
+      summary: Get product list
+      tags:
+      - Product
+  /product/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete product handler
+      parameters:
+      - description: product_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Delete product
+      tags:
+      - Product
+    get:
+      consumes:
+      - application/json
+      description: Get by id product handler
+      parameters:
+      - description: product_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Product'
+      summary: Get by id product
+      tags:
+      - Product
+    put:
+      consumes:
+      - application/json
+      description: Update product handler
+      parameters:
+      - description: product_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Product'
+      summary: Update product
+      tags:
+      - Product
+  /product/create:
+    post:
+      consumes:
+      - application/json
+      description: Create product handler
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Product'
+      summary: Create product
+      tags:
+      - Product
+  /product/search:
+    get:
+      consumes:
+      - application/json
+      description: Search product by name handler
+      parameters:
+      - description: page number
+        format: page
+        in: query
+        name: page
+        type: integer
+      - description: size of page
+        format: size
+        in: query
+        name: size
+        type: integer
+      - description: filter name
+        format: orderBy
+        in: query
+        name: orderBy
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProductList'
+      summary: Search product by name
+      tags:
+      - Product
 swagger: "2.0"

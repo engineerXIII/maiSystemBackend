@@ -8,14 +8,16 @@ import (
 	"github.com/engineerXIII/maiSystemBackend/pkg/httpErrors"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 )
 
-const (
-	basePrefix    = "api-products"
-	cacheDuration = 3600
-)
+// Redis variables
+//const (
+//	basePrefix    = "api-products"
+//	cacheDuration = 3600
+//)
 
 type productUC struct {
 	cfg         *config.Config
@@ -65,4 +67,46 @@ func (u *productUC) Update(ctx context.Context, product *models.Product) (*model
 	}
 
 	return updatedProduct, nil
+}
+
+func (u *productUC) GetProductByID(ctx context.Context, productUUID uuid.UUID) (*models.Product, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.GetProductByID")
+	defer span.Finish()
+
+	p, err := u.productRepo.GetProductByID(ctx, productUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (u *productUC) Delete(ctx context.Context, productUUID uuid.UUID) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.Delete")
+	defer span.Finish()
+
+	_, err := u.productRepo.GetProductByID(ctx, productUUID)
+	if err != nil {
+		return err
+	}
+
+	if err := u.productRepo.Delete(ctx, productUUID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *productUC) GetProducts(ctx context.Context, pq *utils.PaginationQuery) (*models.ProductList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.GetProducts")
+	defer span.Finish()
+
+	return u.productRepo.GetProducts(ctx, pq)
+}
+
+func (u *productUC) SearchByName(ctx context.Context, name string, pq *utils.PaginationQuery) (*models.ProductList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.SearchByName")
+	defer span.Finish()
+
+	return u.productRepo.SearchByName(ctx, name, pq)
 }

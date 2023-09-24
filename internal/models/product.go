@@ -7,7 +7,7 @@ import (
 
 // Product full model
 type Product struct {
-	ProductID   uuid.UUID `json:"product_id" db:"product_id" validate:"omitempty, uuid"`
+	ProductID   uuid.UUID `json:"product_id" db:"product_id" validate:"omitempty"`
 	Name        string    `json:"product_name" db:"product_name" validate:"required,lte=30"`
 	Color       string    `json:"color" db:"color" validate:"required,lte=30"`
 	Factory     string    `json:"factory" db:"factory" validate:"required,lte=30"`
