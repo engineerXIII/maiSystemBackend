@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/engineerXIII/maiSystemBackend/config"
-	"github.com/engineerXIII/maiSystemBackend/internal/server"
+	server "github.com/engineerXIII/maiSystemBackend/internal/service/product"
 	"github.com/engineerXIII/maiSystemBackend/pkg/db/postgres"
 	"github.com/engineerXIII/maiSystemBackend/pkg/db/redis"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"

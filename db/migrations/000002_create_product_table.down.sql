@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS products CASCADE;
+
+
+-- DROP EXTENSION IF EXISTS postgis_topology;
+-- DROP EXTENSION IF EXISTS postgis;
