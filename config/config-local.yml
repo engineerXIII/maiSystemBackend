@@ -12,6 +12,15 @@ server:
   CSRF: true
   Debug: false
 
+rabbitmq:
+  host: localhost
+  port: 5672
+  user: ""
+  password: ""
+  exchange: ""
+  queue: ""
+
+
 jaeger:
   Host: localhost:6831
   ServiceName: REST_API

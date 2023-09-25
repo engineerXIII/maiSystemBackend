@@ -34,6 +34,19 @@ services:
     networks:
       - web_api
 
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    restart: on-failure
+    environment:
+      RABBITMQ_DEFAULT_USER: test
+      RABBITMQ_DEFAULT_PASS: test
+    networks:
+      - web_api
+
   prometheus:
     container_name: prometheus_container
     image: prom/prometheus

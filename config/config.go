@@ -14,6 +14,7 @@ type Config struct {
 	Server   ServerConfig
 	Docs     Docs
 	Postgres PostgresConfig
+	RabbitMQ RabbitMQConfig
 	Redis    RedisConfig
 	Cookie   Cookie
 	Session  Session
@@ -70,6 +71,15 @@ type PostgresConfig struct {
 	Dbname   string
 	SSLMode  bool
 	PgDriver string
+}
+
+type RabbitMQConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Exchange string
+	Queue    string
 }
 
 // Cookie config
