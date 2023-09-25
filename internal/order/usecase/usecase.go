@@ -2,9 +2,10 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/engineerXIII/maiSystemBackend/config"
 	"github.com/engineerXIII/maiSystemBackend/internal/models"
-	"github.com/engineerXIII/maiSystemBackend/internal/product"
+	"github.com/engineerXIII/maiSystemBackend/internal/order"
 	"github.com/engineerXIII/maiSystemBackend/pkg/httpErrors"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
@@ -14,66 +15,76 @@ import (
 )
 
 // Redis variables
-//const (
-//	basePrefix    = "api-products"
-//	cacheDuration = 3600
-//)
+const (
+	basePrefix    = "api-orders:"
+	cacheDuration = 3600
+)
 
-type productUC struct {
-	cfg         *config.Config
-	productRepo product.Repository
-	logger      logger.Logger
+type orderUC struct {
+	cfg       *config.Config
+	orderRepo order.RedisRepository
+	logger    logger.Logger
 }
 
-func NewProductUseCase(cfg *config.Config, productRepo product.Repository, logger logger.Logger) product.UseCase {
-	return &productUC{cfg: cfg, productRepo: productRepo, logger: logger}
+func NewOrderUseCase(cfg *config.Config, orderRepo order.RedisRepository, logger logger.Logger) order.UseCase {
+	return &orderUC{cfg: cfg, orderRepo: orderRepo, logger: logger}
 }
 
-func (u *productUC) Create(ctx context.Context, product *models.Product) (*models.Product, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.Create")
+func (u *orderUC) Create(ctx context.Context, order *models.Order) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderUC.Create")
 	defer span.Finish()
 
-	//user, err := utils.GetUserFromCtx(ctx)
-	//if err != nil {
-	//	return nil, httpErrors.NewUnauthorizedError(errors.WithMessage(err, "productUC.Create.GetUserFromCtx"))
-	//}
-
-	//if err = utils.ValidateStruct(ctx, product); err != nil {
-	if err := utils.ValidateStruct(ctx, product); err != nil {
-		return nil, httpErrors.NewBadRequestError(errors.WithMessage(err, "productUC.Create.ValidateStruct"))
+	if err := utils.ValidateStruct(ctx, order); err != nil {
+		return httpErrors.NewBadRequestError(errors.WithMessage(err, "orderUC.Create.ValidateStruct"))
 	}
 
-	p, err := u.productRepo.Create(ctx, product)
+	order.OrderId = uuid.New()
+	order.Status = 1
+	order.StatusMessage = order.Status.ToString()
+	order.CalculateSum()
+
+	s, _ := json.Marshal(order)
+	u.logger.Debug(string(s))
+
+	redisID := basePrefix + order.OrderId.String()
+
+	err := u.orderRepo.SetOrderCtx(ctx, redisID, cacheDuration, order)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (u *orderUC) Update(ctx context.Context, order *models.Order) (*models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderUC.Update")
+	defer span.Finish()
+
+	order.StatusMessage = order.Status.ToString()
+	order.CalculateSum()
+
+	redisID := basePrefix + order.OrderId.String()
+
+	_, err := u.orderRepo.GetOrderByIDCtx(ctx, redisID)
 	if err != nil {
 		return nil, err
 	}
 
-	return p, err
-}
-
-func (u *productUC) Update(ctx context.Context, product *models.Product) (*models.Product, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.Update")
-	defer span.Finish()
-
-	//productID, err := u.productRepo.GetProductByID(ctx, product.ProductID)
-	_, err := u.productRepo.GetProductByID(ctx, product.ProductID)
+	err = u.orderRepo.SetOrderCtx(ctx, redisID, cacheDuration, order)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedProduct, err := u.productRepo.Update(ctx, product)
-	if err != nil {
-		return nil, err
-	}
-
-	return updatedProduct, nil
+	return order, nil
 }
 
-func (u *productUC) GetProductByID(ctx context.Context, productUUID uuid.UUID) (*models.Product, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.GetProductByID")
+func (u *orderUC) GetOrderByID(ctx context.Context, orderUUID uuid.UUID) (*models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderUC.GetOrderByID")
 	defer span.Finish()
 
-	p, err := u.productRepo.GetProductByID(ctx, productUUID)
+	redisID := basePrefix + orderUUID.String()
+
+	p, err := u.orderRepo.GetOrderByIDCtx(ctx, redisID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,32 +92,20 @@ func (u *productUC) GetProductByID(ctx context.Context, productUUID uuid.UUID) (
 	return p, nil
 }
 
-func (u *productUC) Delete(ctx context.Context, productUUID uuid.UUID) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.Delete")
+func (u *orderUC) Delete(ctx context.Context, orderUUID uuid.UUID) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderUC.Delete")
 	defer span.Finish()
 
-	_, err := u.productRepo.GetProductByID(ctx, productUUID)
+	redisID := basePrefix + orderUUID.String()
+
+	_, err := u.orderRepo.GetOrderByIDCtx(ctx, redisID)
 	if err != nil {
 		return err
 	}
 
-	if err := u.productRepo.Delete(ctx, productUUID); err != nil {
+	if err := u.orderRepo.DeleteOrderCtx(ctx, redisID); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (u *productUC) GetProducts(ctx context.Context, pq *utils.PaginationQuery) (*models.ProductList, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.GetProducts")
-	defer span.Finish()
-
-	return u.productRepo.GetProducts(ctx, pq)
-}
-
-func (u *productUC) SearchByName(ctx context.Context, name string, pq *utils.PaginationQuery) (*models.ProductList, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "productUC.SearchByName")
-	defer span.Finish()
-
-	return u.productRepo.SearchByName(ctx, name, pq)
 }

@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/engineerXIII/maiSystemBackend/config"
 	"github.com/engineerXIII/maiSystemBackend/internal/models"
-	"github.com/engineerXIII/maiSystemBackend/internal/product"
+	"github.com/engineerXIII/maiSystemBackend/internal/order"
 	"github.com/engineerXIII/maiSystemBackend/pkg/httpErrors"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
@@ -13,105 +13,105 @@ import (
 	"net/http"
 )
 
-type productHandlers struct {
-	cfg       *config.Config
-	productUC product.UseCase
-	logger    logger.Logger
+type orderHandlers struct {
+	cfg     *config.Config
+	orderUC order.UseCase
+	logger  logger.Logger
 }
 
-func NewProductHandlers(cfg *config.Config, productUC product.UseCase, logger logger.Logger) product.Handlers {
-	return &productHandlers{cfg: cfg, productUC: productUC, logger: logger}
+func NewOrderHandlers(cfg *config.Config, orderUC order.UseCase, logger logger.Logger) order.Handlers {
+	return &orderHandlers{cfg: cfg, orderUC: orderUC, logger: logger}
 }
 
 // Create godoc
-// @Summary Create product
-// @Description Create product handler
-// @Tags Product
+// @Summary Create order
+// @Description Create order handler
+// @Tags Order
 // @Accept json
 // @Produce json
-// @Success 201 {object} models.Product
-// @Router /product/create [post]
-func (h productHandlers) Create() echo.HandlerFunc {
+// @Success 201 {object} models.Order
+// @Router /order/create [post]
+func (h orderHandlers) Create() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.Create")
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "orderHandlers.Create")
 		defer span.Finish()
 
-		p := &models.Product{}
+		p := &models.Order{}
 		if err := c.Bind(p); err != nil {
 			h.logger.Error(err)
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		createdProduct, err := h.productUC.Create(ctx, p)
+		err := h.orderUC.Create(ctx, p)
 		if err != nil {
 			h.logger.Error(err)
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		return c.JSON(http.StatusCreated, createdProduct)
+		return c.NoContent(http.StatusCreated)
 	}
 }
 
 // Update godoc
-// @Summary Update product
-// @Description Update product handler
-// @Tags Product
+// @Summary Update order
+// @Description Update order handler
+// @Tags Order
 // @Accept json
 // @Produce json
-// @Param id path int true "product_id"
-// @Success 201 {object} models.Product
-// @Router /product/{id} [put]
-func (h productHandlers) Update() echo.HandlerFunc {
+// @Param id path int true "order_id"
+// @Success 201 {object} models.Order
+// @Router /order/{id} [put]
+func (h orderHandlers) Update() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.Update")
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "orderHandlers.Update")
 		defer span.Finish()
 
-		productUUID, err := uuid.Parse(c.Param("product_id"))
+		orderUUID, err := uuid.Parse(c.Param("order_id"))
 		if err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		p := &models.Product{}
+		p := &models.Order{}
 		if err := c.Bind(p); err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
-		p.ProductID = productUUID
+		p.OrderId = orderUUID
 
-		updatedProduct, err := h.productUC.Update(ctx, p)
+		updatedOrder, err := h.orderUC.Update(ctx, p)
 		if err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		return c.JSON(http.StatusOK, updatedProduct)
+		return c.JSON(http.StatusOK, updatedOrder)
 	}
 }
 
 // GetByID godoc
-// @Summary Get by id product
-// @Description Get by id product handler
-// @Tags Product
+// @Summary Get by id order
+// @Description Get by id order handler
+// @Tags Order
 // @Accept json
 // @Produce json
-// @Param id path int true "product_id"
-// @Success 200 {object} models.Product
-// @Router /product/{id} [get]
-func (h productHandlers) GetByID() echo.HandlerFunc {
+// @Param id path int true "order_id"
+// @Success 200 {object} models.Order
+// @Router /order/{id} [get]
+func (h orderHandlers) GetByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.GetByID")
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "orderHandlers.GetByID")
 		defer span.Finish()
 
-		productUUID, err := uuid.Parse(c.Param("product_id"))
+		orderUUID, err := uuid.Parse(c.Param("order_id"))
 		if err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		p, err := h.productUC.GetProductByID(ctx, productUUID)
+		p, err := h.orderUC.GetOrderByID(ctx, orderUUID)
 		if err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
@@ -122,94 +122,30 @@ func (h productHandlers) GetByID() echo.HandlerFunc {
 }
 
 // Delete godoc
-// @Summary Delete product
-// @Description Delete product handler
-// @Tags Product
+// @Summary Delete order
+// @Description Delete order handler
+// @Tags Order
 // @Accept json
 // @Produce json
-// @Param id path int true "product_id"
+// @Param id path int true "order_id"
 // @Success 200 {string} string "ok"
-// @Router /product/{id} [delete]
-func (h productHandlers) Delete() echo.HandlerFunc {
+// @Router /order/{id} [delete]
+func (h orderHandlers) Delete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.Delete")
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "orderHandlers.Delete")
 		defer span.Finish()
 
-		productUUID, err := uuid.Parse(c.Param("product_id"))
+		orderUUID, err := uuid.Parse(c.Param("order_id"))
 		if err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		if err = h.productUC.Delete(ctx, productUUID); err != nil {
+		if err = h.orderUC.Delete(ctx, orderUUID); err != nil {
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
 		return c.NoContent(http.StatusOK)
-	}
-}
-
-// GetProducts godoc
-// @Summary Get product list
-// @Description Get product list handler
-// @Tags Product
-// @Accept json
-// @Produce json
-// @Param page query int flase "page number" Format(page)
-// @Param size query int flase "size of page" Format(size)
-// @Param orderBy query int flase "filter name" Format(orderBy)
-// @Success 200 {object} models.ProductList
-// @Router /product [get]
-func (h productHandlers) GetProducts() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.GetProducts")
-		defer span.Finish()
-
-		pq, err := utils.GetPaginationFromCtx(c)
-		if err != nil {
-			utils.LogResponseError(c, h.logger, err)
-			return c.JSON(httpErrors.ErrorResponse(err))
-		}
-
-		productList, err := h.productUC.GetProducts(ctx, pq)
-		if err != nil {
-			utils.LogResponseError(c, h.logger, err)
-			return c.JSON(httpErrors.ErrorResponse(err))
-		}
-
-		return c.JSON(http.StatusOK, productList)
-	}
-}
-
-// SearchByName godoc
-// @Summary Search product by name
-// @Description Search product by name handler
-// @Tags Product
-// @Accept json
-// @Produce json
-// @Param page query int flase "page number" Format(page)
-// @Param size query int flase "size of page" Format(size)
-// @Param orderBy query int flase "filter name" Format(orderBy)
-// @Success 200 {object} models.ProductList
-// @Router /product/search [get]
-func (h productHandlers) SearchByName() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "productHandlers.SearchByName")
-		defer span.Finish()
-
-		pq, err := utils.GetPaginationFromCtx(c)
-		if err != nil {
-			utils.LogResponseError(c, h.logger, err)
-			return c.JSON(httpErrors.ErrorResponse(err))
-		}
-
-		productList, err := h.productUC.SearchByName(ctx, c.QueryParam("name"), pq)
-		if err != nil {
-			utils.LogResponseError(c, h.logger, err)
-			return c.JSON(httpErrors.ErrorResponse(err))
-		}
-
-		return c.JSON(http.StatusOK, productList)
 	}
 }

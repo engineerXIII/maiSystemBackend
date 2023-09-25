@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"github.com/engineerXIII/maiSystemBackend/docs"
 	//authHttp "github.com/engineerXIII/maiSystemBackend/internal/auth/delivery/http"
+	orderHttp "github.com/engineerXIII/maiSystemBackend/internal/order/delivery/http"
 	//authRepository "github.com/engineerXIII/maiSystemBackend/internal/auth/repository"
 	//authUseCase "github.com/engineerXIII/maiSystemBackend/internal/auth/usecase"
 	apiMiddlewares "github.com/engineerXIII/maiSystemBackend/internal/middleware"
+	orderRepository "github.com/engineerXIII/maiSystemBackend/internal/order/repository"
+	orderScheduler "github.com/engineerXIII/maiSystemBackend/internal/order/scheduler"
+	orderUseCase "github.com/engineerXIII/maiSystemBackend/internal/order/usecase"
 	sessionRepository "github.com/engineerXIII/maiSystemBackend/internal/session/repository"
-	"github.com/engineerXIII/maiSystemBackend/internal/session/usecase"
+	seccUseCase "github.com/engineerXIII/maiSystemBackend/internal/session/usecase"
 	"github.com/engineerXIII/maiSystemBackend/pkg/csrf"
 	"github.com/engineerXIII/maiSystemBackend/pkg/metric"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
@@ -33,25 +37,19 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	// Init repositories
 	sRepo := sessionRepository.NewSessionRepository(s.redisClient, s.cfg)
 	//aRepo := authRepository.NewAuthRepository(s.db)
-	//pRepo := productRepository.NewProductRepository(s.db)
-	//nRepo := newsRepository.NewNewsRepository(s.db)
-	//cRepo := commentsRepository.NewCommentsRepository(s.db)
-	//aAWSRepo := authRepository.NewAuthAWSRepository(s.awsClient)
-	//authRedisRepo := authRepository.NewAuthRedisRepo(s.redisClient)
-	//newsRedisRepo := newsRepository.NewNewsRedisRepo(s.redisClient)
+	orderRedisRepo := orderRepository.NewOrderRedisRepo(s.redisClient)
 
 	// Init useCases
 	//authUC := authUseCase.NewAuthUseCase(s.cfg, aRepo, authRedisRepo, s.logger)
-	//pUC := productUseCase.NewProductUseCase(s.cfg, pRepo, s.logger)
-	//newsUC := newsUseCase.NewNewsUseCase(s.cfg, nRepo, newsRedisRepo, s.logger)
-	//commUC := commentsUseCase.NewCommentsUseCase(s.cfg, cRepo, s.logger)
-	sessUC := usecase.NewSessionUseCase(sRepo, s.cfg)
+	sessUC := seccUseCase.NewSessionUseCase(sRepo, s.cfg)
+	orderUC := orderUseCase.NewOrderUseCase(s.cfg, orderRedisRepo, s.logger)
 
 	// Init handlers
 	//authHandlers := authHttp.NewAuthHandlers(s.cfg, authUC, sessUC, s.logger)
-	//productHandlers := productHttp.NewProductHandlers(s.cfg, pUC, s.logger)
-	//newsHandlers := newsHttp.NewNewsHandlers(s.cfg, newsUC, s.logger)
-	//commHandlers := commentsHttp.NewCommentsHandlers(s.cfg, commUC, s.logger)
+	orderHandlers := orderHttp.NewOrderHandlers(s.cfg, orderUC, s.logger)
+
+	orderScheduler := orderScheduler.NewOrderScheduler(s.cfg, s.amqqChannel, s.amqpQueue, &orderRedisRepo, s.logger)
+	orderScheduler.MapCron(s.scheduler)
 
 	mw := apiMiddlewares.NewMiddlewareManager(sessUC, nil, s.cfg, []string{"*"}, s.logger)
 
@@ -93,11 +91,13 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	v1 := e.Group("/api/v1")
 
 	health := v1.Group("/health")
+	orderGroup := v1.Group("/order")
 	//authGroup := v1.Group("/auth")
 	//productGroup := v1.Group("/product")
 	//newsGroup := v1.Group("/news")
 	//commGroup := v1.Group("/comments")
 
+	orderHttp.MapOrderRoutes(orderGroup, orderHandlers, mw)
 	//authHttp.MapAuthRoutes(authGroup, authHandlers, mw)
 	//productHttp.MapProductRoutes(productGroup, productHandlers, mw)
 	//newsHttp.MapNewsRoutes(newsGroup, newsHandlers, mw)

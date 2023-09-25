@@ -7,6 +7,7 @@ import (
 	"github.com/engineerXIII/maiSystemBackend/pkg/db/redis"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
+	"github.com/go-co-op/gocron"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/uber/jaeger-lib/metrics"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -88,7 +90,10 @@ func main() {
 	defer closer.Close()
 	appLogger.Info("Opentracing connected")
 
-	s := server.NewServer(cfg, amqpQueue, redisClient, appLogger)
+	cron := gocron.NewScheduler(time.UTC)
+	appLogger.Info("Cron started")
+
+	s := server.NewServer(cfg, amqpChannel, amqpQueue, redisClient, cron, appLogger)
 	if err = s.Run(); err != nil {
 		log.Fatal(err)
 	}

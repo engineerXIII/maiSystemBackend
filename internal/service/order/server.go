@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/engineerXIII/maiSystemBackend/config"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
+	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -19,14 +20,16 @@ import (
 type Server struct {
 	echo        *echo.Echo
 	cfg         *config.Config
-	amqpQueue   *amqp.Queue
+	amqqChannel *amqp.Channel
 	redisClient *redis.Client
+	amqpQueue   *amqp.Queue
+	scheduler   *gocron.Scheduler
 	logger      logger.Logger
 }
 
 // NewServer New Server constructor
-func NewServer(cfg *config.Config, amqpQueue *amqp.Queue, redisClient *redis.Client, logger logger.Logger) *Server {
-	return &Server{echo: echo.New(), cfg: cfg, amqpQueue: amqpQueue, redisClient: redisClient, logger: logger}
+func NewServer(cfg *config.Config, amqqChannel *amqp.Channel, amqpQueue *amqp.Queue, redisClient *redis.Client, scheduler *gocron.Scheduler, logger logger.Logger) *Server {
+	return &Server{echo: echo.New(), cfg: cfg, amqqChannel: amqqChannel, amqpQueue: amqpQueue, redisClient: redisClient, scheduler: scheduler, logger: logger}
 }
 
 const (
@@ -37,6 +40,7 @@ const (
 )
 
 func (s *Server) Run() error {
+
 	if s.cfg.Server.SSL {
 		if err := s.MapHandlers(s.echo); err != nil {
 			return err
@@ -62,12 +66,14 @@ func (s *Server) Run() error {
 			}
 		}()
 
+		s.scheduler.StartAsync()
+
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-
 		<-quit
 
 		ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
+		defer s.scheduler.Stop()
 		defer shutdown()
 
 		s.logger.Info("Server Exited Properly")
@@ -99,12 +105,14 @@ func (s *Server) Run() error {
 		return err
 	}
 
+	s.scheduler.StartAsync()
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	<-quit
 
 	ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
+	defer s.scheduler.Stop()
 	defer shutdown()
 
 	s.logger.Info("Server Exited Properly")

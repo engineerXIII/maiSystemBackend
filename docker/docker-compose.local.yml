@@ -1,6 +1,48 @@
 version: "3.8"
 
 services:
+  nginx:
+    container_name: nginx
+    restart: always
+    image: nginx:1.22
+    ports:
+      - "8888:8888"
+    depends_on:
+      - product
+    links:
+      - product
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - web_api
+  product:
+    container_name: api_product
+    build:
+      context: ./../
+      dockerfile: Dockerfile.Product
+    ports:
+      - "5050:5050"
+    environment:
+      - SERVER_PORT=:5050
+      - POSTGRES_HOST=postgesql
+      - REDIS_REDISADDR=keydb:6379
+    links:
+      - postgesql
+      - keydb
+      - jaeger
+    cap_add:
+      - SYS_PTRACE
+    depends_on:
+      - postgesql
+      - redis
+    restart: always
+    volumes:
+      - ./../:/app
+    networks:
+      - web_api
+
   jaeger:
     container_name: jaeger_container
     restart: always

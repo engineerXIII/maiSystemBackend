@@ -2,4 +2,3 @@
 .git
 .golangci.yml
 docker
-config/*.yml

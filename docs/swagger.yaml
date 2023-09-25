@@ -6,6 +6,48 @@ definitions:
       status:
         type: integer
     type: object
+  models.Order:
+    properties:
+      order_id:
+        type: string
+      order_list:
+        items:
+          $ref: '#/definitions/models.OrderItem'
+        type: array
+      status:
+        $ref: '#/definitions/models.OrderStatus'
+      status_message:
+        type: string
+    type: object
+  models.OrderItem:
+    properties:
+      cost:
+        minimum: 1
+        type: integer
+      order_id:
+        type: string
+      qty:
+        minimum: 1
+        type: integer
+    type: object
+  models.OrderStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    type: integer
+    x-enum-varnames:
+    - OrderStatusUndefined
+    - OrderStatusCreated
+    - OrderStatusConfirmed
+    - OrderStatusPackaged
+    - OrderStatusInDelivery
+    - OrderStatusCompleted
+    - OrderStatusCancelled
   models.Product:
     properties:
       color:
@@ -314,6 +356,82 @@ paths:
       summary: Get CSRF token
       tags:
       - Auth
+  /order/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete order handler
+      parameters:
+      - description: order_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Delete order
+      tags:
+      - Order
+    get:
+      consumes:
+      - application/json
+      description: Get by id order handler
+      parameters:
+      - description: order_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+      summary: Get by id order
+      tags:
+      - Order
+    put:
+      consumes:
+      - application/json
+      description: Update order handler
+      parameters:
+      - description: order_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Order'
+      summary: Update order
+      tags:
+      - Order
+  /order/create:
+    post:
+      consumes:
+      - application/json
+      description: Create order handler
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Order'
+      summary: Create order
+      tags:
+      - Order
   /product:
     get:
       consumes:

@@ -5,48 +5,55 @@ import "github.com/google/uuid"
 type OrderStatus int64
 
 const (
-	Undefined OrderStatus = iota
-	Created
-	Confirmed
-	Packaged
-	InDelivery
-	Completed
-	Cancelled
+	OrderStatusUndefined OrderStatus = iota
+	OrderStatusCreated
+	OrderStatusConfirmed
+	OrderStatusPackaged
+	OrderStatusInDelivery
+	OrderStatusCompleted
+	OrderStatusCancelled
 )
 
 func (s OrderStatus) ToString() string {
 	switch s {
 	default:
-	case Undefined:
+	case OrderStatusUndefined:
 		return "undegined"
-	case Created:
+	case OrderStatusCreated:
 		return "created"
-	case Confirmed:
+	case OrderStatusConfirmed:
 		return "confirmed"
-	case Packaged:
+	case OrderStatusPackaged:
 		return "packaged"
-	case InDelivery:
+	case OrderStatusInDelivery:
 		return "indelivery"
-	case Completed:
+	case OrderStatusCompleted:
 		return "completed"
-	case Cancelled:
+	case OrderStatusCancelled:
 		return "cancelled"
 	}
 	return ""
 }
 
+type OrderStatusNotify struct {
+	OrderId       uuid.UUID   `json:"order_id"`
+	Status        OrderStatus `json:"status"`
+	StatusMessage string      `json:"status_message"`
+}
+
 type Order struct {
-	OrderId   uuid.UUID    `json:"order_id" validate:"omitempty"`
-	Status    string       `json:"status"`
-	sum       int          `json:"sum" validate:"min=1"`
-	OrderList []*OrderItem `json:"order_list"`
+	OrderId       uuid.UUID    `json:"order_id" validate:"omitempty"`
+	Status        OrderStatus  `json:"status"`
+	StatusMessage string       `json:"status_message"`
+	Sum           int          `json:"sum" validate:"omitempty"`
+	OrderList     []*OrderItem `json:"order_list"`
 }
 
 type OrderItem struct {
-	ItemId uuid.UUID `json:"order_id" validate:"omitempty"`
+	ItemId uuid.UUID `json:"item_id" validate:"omitempty"`
 	Cost   int       `json:"cost" validate:"min=1"`
 	Qty    int       `json:"qty" validate:"min=1"`
-	sum    int       `json:"sum" validate:"min=1"`
+	Sum    int       `json:"sum" validate:"omitempty"`
 }
 
 func (o *Order) CalculateSum() {
@@ -54,19 +61,19 @@ func (o *Order) CalculateSum() {
 	for _, item := range o.OrderList {
 		sum += item.GetSum()
 	}
-	o.sum = sum
+	o.Sum = sum
 }
 
 func (o *Order) GetSum() int {
 	o.CalculateSum()
-	return o.sum
+	return o.Sum
 }
 
 func (o *OrderItem) CalculateSum() {
-	o.sum = o.Qty * o.Cost
+	o.Sum = o.Qty * o.Cost
 }
 
 func (o *OrderItem) GetSum() int {
 	o.CalculateSum()
-	return o.sum
+	return o.Sum
 }
