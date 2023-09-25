@@ -1,0 +1,15 @@
+FROM golang:1.19
+
+RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
+
+ENV config=docker
+
+COPY ./ /app
+
+WORKDIR /app
+
+RUN go mod download
+
+
+EXPOSE 5050
+ENTRYPOINT CompileDaemon --build="go build ./cmd/api/order.go" --command=./order

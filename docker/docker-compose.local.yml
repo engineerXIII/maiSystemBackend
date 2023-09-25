@@ -26,8 +26,11 @@ services:
       - "5050:5050"
     environment:
       - SERVER_PORT=:5050
+      - JAEGER_HOST=jaeger:6831
+      - JAEGER_SERVICENAME=product_api
       - POSTGRES_HOST=postgesql
       - REDIS_REDISADDR=keydb:6379
+      - METRICS_SERVICENAME=product_api
     links:
       - postgesql
       - keydb
@@ -36,7 +39,38 @@ services:
       - SYS_PTRACE
     depends_on:
       - postgesql
-      - redis
+      - keydb
+    restart: always
+    volumes:
+      - ./../:/app
+    networks:
+      - web_api
+  order:
+    container_name: api_order
+    build:
+      context: ./../
+      dockerfile: Dockerfile.Order
+    ports:
+      - "5055:5055"
+    environment:
+      - SERVER_PORT=:5055
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=test
+      - RABBITMQ_PASSWORD=test
+      - RABBITMQ_QUEUE=notify
+      - JAEGER_HOST=jaeger:6831
+      - JAEGER_SERVICENAME=order_api
+      - REDIS_REDISADDR=keydb:6379
+      - METRICS_SERVICENAME=order_api
+    links:
+      - rabbitmq
+      - keydb
+      - jaeger
+    cap_add:
+      - SYS_PTRACE
+    depends_on:
+      - rabbitmq
+      - keydb
     restart: always
     volumes:
       - ./../:/app
