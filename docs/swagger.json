@@ -677,6 +677,9 @@
                 },
                 "status_message": {
                     "type": "string"
+                },
+                "sum": {
+                    "type": "integer"
                 }
             }
         },
@@ -687,12 +690,15 @@
                     "type": "integer",
                     "minimum": 1
                 },
-                "order_id": {
+                "item_id": {
                     "type": "string"
                 },
                 "qty": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "sum": {
+                    "type": "integer"
                 }
             }
         },

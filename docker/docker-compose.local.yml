@@ -45,15 +45,44 @@ services:
       - ./../:/app
     networks:
       - web_api
+  notification:
+    container_name: api_notification
+    build:
+      context: ./../
+      dockerfile: Dockerfile.Notification
+    ports:
+      - "5055:5055"
+    environment:
+      - SERVER_PORT=:5055
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=test
+      - RABBITMQ_PASSWORD=test
+      - RABBITMQ_QUEUE=notify
+      - JAEGER_HOST=jaeger:6831
+      - JAEGER_SERVICENAME=notification_api
+      - REDIS_REDISADDR=keydb:6379
+      - METRICS_SERVICENAME=notification_api
+    links:
+      - rabbitmq
+      - jaeger
+    cap_add:
+      - SYS_PTRACE
+    depends_on:
+      - rabbitmq
+    restart: always
+    volumes:
+      - ./../:/app
+    networks:
+      - web_api
   order:
     container_name: api_order
     build:
       context: ./../
       dockerfile: Dockerfile.Order
     ports:
-      - "5055:5055"
+      - "5550:5550"
     environment:
-      - SERVER_PORT=:5055
+      - SERVER_PORT=:5550
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=test
       - RABBITMQ_PASSWORD=test

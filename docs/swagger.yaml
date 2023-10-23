@@ -18,16 +18,20 @@ definitions:
         $ref: '#/definitions/models.OrderStatus'
       status_message:
         type: string
+      sum:
+        type: integer
     type: object
   models.OrderItem:
     properties:
       cost:
         minimum: 1
         type: integer
-      order_id:
+      item_id:
         type: string
       qty:
         minimum: 1
+        type: integer
+      sum:
         type: integer
     type: object
   models.OrderStatus:

@@ -688,6 +688,9 @@ const docTemplate = `{
                 },
                 "status_message": {
                     "type": "string"
+                },
+                "sum": {
+                    "type": "integer"
                 }
             }
         },
@@ -698,12 +701,15 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
-                "order_id": {
+                "item_id": {
                     "type": "string"
                 },
                 "qty": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "sum": {
+                    "type": "integer"
                 }
             }
         },
