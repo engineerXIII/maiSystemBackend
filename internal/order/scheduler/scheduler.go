@@ -26,6 +26,7 @@ func NewOrderScheduler(cfg *config.Config, amqqChannel *amqp.Channel, amqpQueue 
 }
 
 func (o *orderScheduler) MapCron(cron *gocron.Scheduler) {
+	// Auto status change
 	cron.Every(30).Second().Do(func() {
 		repo := *o.orderRepo
 		ctx, shutdown := context.WithTimeout(context.Background(), 30*time.Second)
@@ -33,12 +34,12 @@ func (o *orderScheduler) MapCron(cron *gocron.Scheduler) {
 
 		keys, err := repo.GetOrderKeysCtx(context.Background())
 		if err != nil {
-			o.logger.Errorf("Cron: Order keys scan redis failed: %s", err)
+			o.logger.Errorf("[CRON][AUTOSTATUS]: Order keys scan redis failed: %s", err)
 		}
 
 		var keyLen int = len(keys)
 		if keyLen == 0 {
-			o.logger.Info("Cron: Nothing to update in orders")
+			o.logger.Info("[CRON][AUTOSTATUS]: Nothing to update in orders")
 			return
 		}
 		index_key := rand.Intn(keyLen)
@@ -46,18 +47,26 @@ func (o *orderScheduler) MapCron(cron *gocron.Scheduler) {
 		switch value.Status {
 		default:
 			return
+		case models.OrderStatusCreated:
+			value.Status = value.Status + 1
+			value.StatusMessage = value.Status.ToString()
+			break
+		case models.OrderStatusConfirmed:
+			value.Status = value.Status + 1
+			value.StatusMessage = value.Status.ToString()
+			break
 		case models.OrderStatusPackaged:
 			value.Status = value.Status + 1
 			value.StatusMessage = value.Status.ToString()
 			break
-		case models.OrderStatusCreated:
+		case models.OrderStatusInDelivery:
 			value.Status = value.Status + 1
 			value.StatusMessage = value.Status.ToString()
 			break
 		}
 		err = repo.SetOrderCtx(ctx, keys[index_key], 3600, value)
 		if err != nil {
-			o.logger.Errorf("Cron: Order update fail: %s", err)
+			o.logger.Errorf("[CRON][AUTOSTATUS]: Order update fail: %s", err)
 		}
 
 		jsonStr, _ := json.Marshal(models.OrderStatusNotify{
@@ -66,7 +75,7 @@ func (o *orderScheduler) MapCron(cron *gocron.Scheduler) {
 			StatusMessage: value.StatusMessage,
 		})
 
-		o.logger.Debugf("Cron: Order notify JSON: %s", string(jsonStr))
+		o.logger.Debugf("[CRON][AUTOSTATUS]: Order notify JSON: %s", string(jsonStr))
 
 		err = o.amqqChannel.PublishWithContext(ctx,
 			"",
@@ -78,7 +87,7 @@ func (o *orderScheduler) MapCron(cron *gocron.Scheduler) {
 				Body:        jsonStr,
 			})
 		if err != nil {
-			o.logger.Errorf("Cron: Order notify publish error: %s", err)
+			o.logger.Errorf("[CRON][AUTOSTATUS]: Order notify publish error: %s", err)
 		}
 
 	})

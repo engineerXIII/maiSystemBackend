@@ -164,7 +164,7 @@ func ParseErrors(err error) RestErr {
 	case strings.Contains(strings.ToLower(err.Error()), "token"):
 		return NewRestError(http.StatusUnauthorized, Unauthorized.Error(), err)
 	case strings.Contains(strings.ToLower(err.Error()), "bcrypt"):
-		return NewRestError(http.StatusBadRequest, BadRequest.Error(), err)
+		return NewRestError(http.StatusUnauthorized, Unauthorized.Error(), err)
 	default:
 		if restErr, ok := err.(RestErr); ok {
 			return restErr
