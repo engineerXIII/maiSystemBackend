@@ -7,6 +7,7 @@ import (
 	"github.com/engineerXIII/maiSystemBackend/pkg/db/redis"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/engineerXIII/maiSystemBackend/pkg/utils"
+	redis2 "github.com/go-redis/redis/v8"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -39,7 +40,11 @@ func main() {
 	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s, SSL: %v", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode, cfg.Server.SSL)
 
 	redisClient := redis.NewRedisClient(cfg)
-	redisClient.Touch(context.WithTimeout(context.TODO(), time.Second), "conn")
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	err = redisClient.Set(ctx, "conn", 1, 1000).Err()
+	if err != nil || err == redis2.Nil {
+		appLogger.Fatalf("Redis error: %v", err)
+	}
 	defer redisClient.Close()
 	appLogger.Info("Redis connected")
 

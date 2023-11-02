@@ -40,14 +40,18 @@ func (i *inventoryRedisRepo) GetByIDCtx(ctx context.Context, key string) (*model
 	defer span.Finish()
 
 	itemBytes, err := i.redisClient.Get(ctx, i.createKey(key)).Bytes()
-	if err != nil {
-		return nil, errors.Wrap(err, "authRedisRepo.GetByIDCtx.redisClient.Get")
+	if err != nil && err.Error() != redis.Nil.Error() {
+		return nil, errors.Wrap(err, "inventoryRedisRepo.GetByIDCtx.redisClient.Get")
 	}
-	item := &models.InventoryItem{}
-	if err = json.Unmarshal(itemBytes, item); err != nil {
-		return nil, errors.Wrap(err, "inventoryRedisRepo.GetByIDCtx.json.Unmarshal")
+	if itemBytes != nil {
+		item := &models.InventoryItem{}
+		if err = json.Unmarshal(itemBytes, item); err != nil {
+			return nil, errors.Wrap(err, "inventoryRedisRepo.GetByIDCtx.json.Unmarshal")
+		}
+		return item, nil
+	} else {
+		return nil, nil
 	}
-	return item, nil
 }
 
 func (i *inventoryRedisRepo) SetItemCtx(ctx context.Context, key string, seconds int, item *models.InventoryItem) error {
@@ -56,7 +60,7 @@ func (i *inventoryRedisRepo) SetItemCtx(ctx context.Context, key string, seconds
 
 	itemBytes, err := json.Marshal(item)
 	if err != nil {
-		return errors.Wrap(err, "authRedisRepo.SetItemCtx.json.Unmarshal")
+		return errors.Wrap(err, "inventoryRedisRepo.SetItemCtx.json.Unmarshal")
 	}
 	if err = i.redisClient.Set(ctx, i.createKey(key), itemBytes, time.Second*time.Duration(seconds)).Err(); err != nil {
 		return errors.Wrap(err, "inventoryRedisRepo.SetItemCtx.redisClient.Set")

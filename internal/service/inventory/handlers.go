@@ -102,6 +102,7 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 			http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				if req.ProtoMajor == 2 && strings.Contains(req.Header.Get("Content-Type"), "application/grpc") {
 					s.logger.Debug("Called grpc")
+
 					s.grpcServer.ServeHTTP(w, req)
 				} else {
 					s.logger.Debug("Called http")

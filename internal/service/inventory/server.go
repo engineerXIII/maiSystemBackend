@@ -80,7 +80,7 @@ func (s *Server) Run() error {
 
 		ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 		defer shutdown()
-		defer s.grpcServer.Stop()
+		defer s.grpcServer.GracefulStop()
 
 		s.logger.Info("Server Exited Properly")
 		return s.echo.Shutdown(ctx)
@@ -123,7 +123,7 @@ func (s *Server) Run() error {
 
 	ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer shutdown()
-	defer s.grpcServer.Stop()
+	defer s.grpcServer.GracefulStop()
 
 	s.logger.Info("Server Exited Properly")
 	return s.echo.Shutdown(ctx)

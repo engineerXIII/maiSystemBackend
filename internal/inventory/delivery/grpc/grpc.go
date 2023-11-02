@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/engineerXIII/maiSystemBackend/config"
 	"github.com/engineerXIII/maiSystemBackend/internal/inventory"
+	"github.com/engineerXIII/maiSystemBackend/internal/models"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	pb "github.com/engineerXIII/maiSystemBackend/proto/api/v1"
 	"github.com/google/uuid"
@@ -14,7 +15,7 @@ type InventoryServer struct {
 	cfg         *config.Config
 	inventoryUC inventory.UseCase
 	logger      logger.Logger
-	pb.UnimplementedInventoryServiceServer
+	pb.InventoryServiceServer
 }
 
 func NewInventoryServer(cfg *config.Config, inventoryUC inventory.UseCase, logger logger.Logger) *InventoryServer {
@@ -25,36 +26,93 @@ func NewInventoryServer(cfg *config.Config, inventoryUC inventory.UseCase, logge
 	}
 }
 
-func (s InventoryServer) CheckItem(ctx context.Context, in *pb.ItemRequest) (*pb.ItemAvailableResponse, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "inventory.CheckItem")
+func (s InventoryServer) CheckItem(c context.Context, in *pb.ItemRequest) (*pb.ItemAvailableResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(c, "inventory.CheckItem")
 	defer span.Finish()
 
 	response := &pb.ItemAvailableResponse{}
+	status := pb.Status_OK
 	for _, item := range in.Item {
-		uuidItem, _ := uuid.FromBytes([]byte(item.Uuid))
+		uuidItem, _ := uuid.Parse(item.Uuid)
 		foundItem, err := s.inventoryUC.GetItemByID(ctx, uuidItem)
 		if err != nil {
 			return nil, err
 		} else if foundItem == nil {
-			return &pb.ItemAvailableResponse{
-				Item:   []*pb.Item{item},
+			response.Items = append(response.Items, &pb.ItemAvailableStatus{
+				Item: &pb.Item{
+					Uuid: item.Uuid,
+					Qty:  0,
+				},
 				Status: pb.Status_NotFound,
-			}, nil
+			})
+			status = pb.Status_NotEnoughAvailable
 		} else {
-			response.Item = append(response.Item, &pb.Item{
-				Uuid: foundItem.UUID.String(),
-				Qty:  uint64(item.Qty),
+			qty := item.Qty
+			sts := pb.Status_OK
+			if uint64(foundItem.Qty) < item.Qty {
+				qty = uint64(foundItem.Qty)
+				sts = pb.Status_NotEnoughAvailable
+				status = pb.Status_NotEnoughAvailable
+			}
+			response.Items = append(response.Items, &pb.ItemAvailableStatus{
+				Item: &pb.Item{
+					Uuid: foundItem.UUID.String(),
+					Qty:  qty,
+				},
+				Status: sts,
 			})
 		}
 	}
+	response.Status = status
+	return response, nil
+}
+
+func (s InventoryServer) AddItem(c context.Context, in *pb.ItemRequest) (*pb.Response, error) {
+	span, ctx := opentracing.StartSpanFromContext(c, "inventory.CheckItem")
+	defer span.Finish()
+
+	response := &pb.Response{}
+	uid, _ := uuid.Parse(in.Item[0].Uuid)
+	item := &models.InventoryItem{
+		UUID: uid,
+		Qty:  int(in.Item[0].Qty),
+	}
+	_, err := s.inventoryUC.AddItem(ctx, item)
+	if err != nil {
+		return nil, err
+	}
+	response.StatusMessage = "Created"
 	response.Status = pb.Status_OK
 	return response, nil
 }
 
-func (s InventoryServer) AddItem(ctx context.Context, in *pb.ItemRequest) (*pb.Response, error) {
-	return nil, nil
-}
+func (s InventoryServer) RemoveItem(c context.Context, in *pb.ItemRequest) (*pb.Response, error) {
+	span, ctx := opentracing.StartSpanFromContext(c, "inventory.CheckItem")
+	defer span.Finish()
 
-func (s InventoryServer) RemoveItem(ctx context.Context, in *pb.ItemRequest) (*pb.Response, error) {
-	return nil, nil
+	response := &pb.Response{}
+	status := pb.Status_OK
+	response.Status = status
+	response.StatusMessage = "Successfull"
+	for _, item := range in.Item {
+		uuidItem, _ := uuid.Parse(item.Uuid)
+		foundItem, err := s.inventoryUC.GetItemByID(ctx, uuidItem)
+		if err != nil {
+			return nil, err
+		} else if foundItem != nil {
+			foundItem.Qty = foundItem.Qty - 1
+			status = pb.Status_OK
+
+			_, err := s.inventoryUC.RemoveItem(ctx, foundItem)
+			if err != nil {
+				s.logger.Error(err)
+				status = pb.Status_Error
+				response.StatusMessage = "Error during removing item"
+			}
+		} else {
+			status = pb.Status_NotFound
+			response.StatusMessage = "Not found: " + item.Uuid
+		}
+	}
+	return response, nil
 }
