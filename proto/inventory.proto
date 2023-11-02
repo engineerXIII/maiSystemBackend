@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "api/v1";
+
+enum Status {
+  Undefined = 0;
+  OK = 1;
+  NotEnoughAvailable = 2;
+  reserved 3 to 9;
+  Error = 10;
+  NotFound = 11;
+  reserved 12 to max;
+}
+
+message ItemRequest {
+  repeated Item item = 1;
+}
+
+message ItemAvailableStatus {
+  Status status = 1;
+  Item item = 2;
+}
+
+message ItemAvailableResponse {
+  Status status = 1;
+  repeated ItemAvailableStatus items = 2;
+}
+
+message Item {
+  string uuid = 1;
+  reserved 2 to 10;
+  uint64 qty = 11;
+}
+
+message Response {
+  Status status = 1;
+  string status_message = 2;
+}
+
+service InventoryService {
+  rpc CheckItem (ItemRequest) returns (ItemAvailableResponse);
+  rpc AddItem (ItemRequest) returns (Response);
+  rpc RemoveItem (ItemRequest) returns (Response);
+}
