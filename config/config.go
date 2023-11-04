@@ -12,6 +12,7 @@ import (
 // App config struct
 type Config struct {
 	Server   ServerConfig
+	Service  Service
 	Docs     Docs
 	Postgres PostgresConfig
 	RabbitMQ RabbitMQConfig
@@ -51,6 +52,10 @@ type ServerConfig struct {
 	CtxDefaultTimeout time.Duration
 	CSRF              bool
 	Debug             bool
+}
+
+type Service struct {
+	Inventory string
 }
 
 // Logger config

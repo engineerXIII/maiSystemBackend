@@ -91,20 +91,49 @@ services:
       - JAEGER_SERVICENAME=order_api
       - REDIS_REDISADDR=keydb:6379
       - METRICS_SERVICENAME=order_api
+      - SERVICE_INVENTORY=inventory_api:5660
     links:
       - rabbitmq
       - keydb
+      - inventory
       - jaeger
     cap_add:
       - SYS_PTRACE
     depends_on:
       - rabbitmq
       - keydb
+      - jaeger
+      - inventory
     restart: always
     volumes:
       - ./../:/app
     networks:
       - web_api
+  inventory:
+      container_name: api_inventory
+      build:
+        context: ./../
+        dockerfile: Dockerfile.Inventory
+      ports:
+        - "5660:5660"
+      environment:
+        - SERVER_PORT=:5660
+        - JAEGER_HOST=jaeger:6831
+        - JAEGER_SERVICENAME=inventory_api
+        - REDIS_REDISADDR=keydb:6379
+        - METRICS_SERVICENAME=inventory_api
+      links:
+        - keydb
+        - jaeger
+      cap_add:
+        - SYS_PTRACE
+      depends_on:
+        - keydb
+      restart: always
+      volumes:
+        - ./../:/app
+      networks:
+        - web_api
 
   jaeger:
     container_name: jaeger_container

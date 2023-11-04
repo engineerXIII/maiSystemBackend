@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/engineerXIII/maiSystemBackend/config"
 	"github.com/engineerXIII/maiSystemBackend/pkg/logger"
 	"github.com/go-redis/redis/v8"
@@ -32,7 +33,7 @@ func NewServer(cfg *config.Config, redisClient *redis.Client, logger logger.Logg
 
 const (
 	certFile       = "ssl/cert.crt"
-	keyFile        = "ssl/private.pem"
+	keyFile        = "ssl/private.key"
 	maxHeaderBytes = 1 << 20
 	ctxTimeout     = 5
 )
@@ -40,8 +41,16 @@ const (
 func (s *Server) Run() error {
 	grpcOpts := []grpc.ServerOption{}
 	if true {
-		//if s.cfg.Server.SSL {
-		creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+		serverCert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return err
+		}
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{serverCert},
+			ClientAuth:   tls.NoClientCert,
+		}
+		creds := credentials.NewTLS(tlsConfig)
+		//creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 		if err != nil {
 			return err
 		}

@@ -33,8 +33,8 @@ func NewServer(cfg *config.Config, amqqChannel *amqp.Channel, amqpQueue *amqp.Qu
 }
 
 const (
-	certFile       = "ssl/Server.crt"
-	keyFile        = "ssl/Server.pem"
+	certFile       = "ssl/cert.crt"
+	keyFile        = "ssl/private.key"
 	maxHeaderBytes = 1 << 20
 	ctxTimeout     = 5
 )
