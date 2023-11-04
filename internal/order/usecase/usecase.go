@@ -30,12 +30,12 @@ func NewOrderUseCase(cfg *config.Config, orderRepo order.RedisRepository, logger
 	return &orderUC{cfg: cfg, orderRepo: orderRepo, logger: logger}
 }
 
-func (u *orderUC) Create(ctx context.Context, order *models.Order) error {
+func (u *orderUC) Create(ctx context.Context, order *models.Order) (*models.Order, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "orderUC.Create")
 	defer span.Finish()
 
 	if err := utils.ValidateStruct(ctx, order); err != nil {
-		return httpErrors.NewBadRequestError(errors.WithMessage(err, "orderUC.Create.ValidateStruct"))
+		return nil, httpErrors.NewBadRequestError(errors.WithMessage(err, "orderUC.Create.ValidateStruct"))
 	}
 
 	order.OrderId = uuid.New()
@@ -50,10 +50,10 @@ func (u *orderUC) Create(ctx context.Context, order *models.Order) error {
 
 	err := u.orderRepo.SetOrderCtx(ctx, redisID, cacheDuration, order)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return err
+	return order, err
 }
 
 func (u *orderUC) Update(ctx context.Context, order *models.Order) (*models.Order, error) {

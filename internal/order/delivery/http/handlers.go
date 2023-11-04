@@ -43,14 +43,14 @@ func (h orderHandlers) Create() echo.HandlerFunc {
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		err := h.orderUC.Create(ctx, p)
+		order, err := h.orderUC.Create(ctx, p)
 		if err != nil {
 			h.logger.Error(err)
 			utils.LogResponseError(c, h.logger, err)
 			return c.JSON(httpErrors.ErrorResponse(err))
 		}
 
-		return c.NoContent(http.StatusCreated)
+		return c.JSON(http.StatusCreated, order)
 	}
 }
 
